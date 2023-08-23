@@ -1,8 +1,13 @@
+import { GlobalStyles } from './components/GlobalStyles';
+
 const App = () => {
   return (
-    <div>
-      <h1>React TypeScript Template</h1>
-    </div>
+    <>
+      <GlobalStyles />
+      <div>
+        <h1>React TypeScript Template</h1>
+      </div>
+    </>
   );
 };
 
