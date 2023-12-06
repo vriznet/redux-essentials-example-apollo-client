@@ -2,9 +2,12 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import Spinner from '../components/Spinner';
 import { notifications } from '../data/notifications';
 import { Notification } from '../types/notification';
-import { users } from '../data/users';
+import { useSelector } from 'react-redux';
+import { selectUsers } from '../redux/module/usersSlice';
 
 const NotificationsList = () => {
+  const users = useSelector(selectUsers);
+
   const useGetNotificationsQuery: (userId: string) => {
     loading: boolean;
     data: {

@@ -4,10 +4,13 @@ import PostAuthor from '../features/posts/PostAuthor';
 import ReactionButtons from '../features/posts/ReactionButtons';
 import TimeAgo from '../features/posts/TimeAgo';
 import { Post } from '../types/post';
-import { posts } from '../data/posts';
+import { selectPosts } from '../redux/module/postsSlice';
+import { useSelector } from 'react-redux';
 
 const SinglePostPage = () => {
   const { postId } = useParams<{ postId: string }>();
+
+  const posts = useSelector(selectPosts);
 
   const useGetPostQuery: (postId: string) => {
     loading: boolean;

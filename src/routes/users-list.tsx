@@ -1,7 +1,10 @@
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { users } from '../data/users';
+import { selectUsers } from '../redux/module/usersSlice';
 
 const UsersList = () => {
+  const users = useSelector(selectUsers);
+
   const renderedUsers = users.map((user) => (
     <li key={user.id}>
       <Link to={`/user/${user.id}`}>{user.name}</Link>

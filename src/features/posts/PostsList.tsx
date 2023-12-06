@@ -3,10 +3,11 @@ import PostAuthor from './PostAuthor';
 import ReactionButtons from './ReactionButtons';
 import TimeAgo from './TimeAgo';
 import { Post } from '../../types/post';
-import { posts } from '../../data/posts';
 import { useMemo } from 'react';
 import Spinner from '../../components/Spinner';
 import classNames from 'classnames';
+import { useSelector } from 'react-redux';
+import { selectPosts } from '../../redux/module/postsSlice';
 
 interface IPostExcerptProps {
   post: Post;
@@ -31,6 +32,8 @@ const PostExcerpt = (props: IPostExcerptProps) => {
 };
 
 const PostsList = () => {
+  const posts = useSelector(selectPosts);
+
   const useGetPostsQuery: () => {
     loading: boolean;
     data: {

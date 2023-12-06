@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { users } from '../../data/users';
+import { useDispatch, useSelector } from 'react-redux';
+import { postAdded } from '../../redux/module/postsSlice';
+import { selectUsers } from '../../redux/module/usersSlice';
 
 const AddPostForm = () => {
+  const users = useSelector(selectUsers);
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState('');
@@ -18,6 +22,8 @@ const AddPostForm = () => {
   };
   const [addNewPost] = useAddNewPostMutation();
 
+  const dispatch = useDispatch();
+
   const onTitleChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   };
@@ -27,12 +33,16 @@ const AddPostForm = () => {
   const onAuthorChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUserId(e.target.value);
   };
-
-  const canSave = Boolean(title) && Boolean(content) && Boolean(userId);
-
   const onSavePostClicked = () => {
     try {
       if (canSave) {
+        dispatch(
+          postAdded({
+            title,
+            content,
+            userId,
+          })
+        );
         addNewPost({ title, content, userId });
         setTitle('');
         setContent('');
@@ -41,6 +51,8 @@ const AddPostForm = () => {
       console.error('Failed to save the post: ', error);
     }
   };
+
+  const canSave = Boolean(title) && Boolean(content) && Boolean(userId);
 
   const usersOptions = users.map((user) => (
     <option key={user.id} value={user.id}>

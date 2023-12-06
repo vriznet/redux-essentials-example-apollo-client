@@ -1,10 +1,14 @@
 import { useParams } from 'react-router-dom';
-import { posts } from '../data/posts';
 import { Link } from 'react-router-dom';
-import { users } from '../data/users';
+import { useSelector } from 'react-redux';
+import { selectUsers } from '../redux/module/usersSlice';
+import { selectPosts } from '../redux/module/postsSlice';
 
 const UserPage = () => {
   const { userId } = useParams<{ userId: string }>();
+
+  const users = useSelector(selectUsers);
+  const posts = useSelector(selectPosts);
 
   const user = users.find((user) => user.id === userId);
 

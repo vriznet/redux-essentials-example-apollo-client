@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { posts } from '../data/posts';
 import { useState } from 'react';
 import Spinner from '../components/Spinner';
 import { Post } from '../types/post';
+import { useDispatch, useSelector } from 'react-redux';
+import { postUpdated, selectPosts } from '../redux/module/postsSlice';
 
 const EditPostForm = () => {
   const { postId } = useParams<{ postId: string }>();
+  const posts = useSelector(selectPosts);
 
   const useGetPostQuery: (postId: string) => {
     loading: boolean;
@@ -66,6 +68,7 @@ const EditPostForm = () => {
   const [content, setContent] = useState(getPostQueryData?.content || '');
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const onTitleChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -77,6 +80,7 @@ const EditPostForm = () => {
   const onSavePostClicked = () => {
     try {
       if (title && content && getPostQueryData) {
+        dispatch(postUpdated({ id: postId, title, content }));
         updatePost({ postId, title, content, userId: getPostQueryData.userId });
         navigate(`/post/${postId}`);
       } else {
