@@ -1,5 +1,6 @@
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/module';
+import { selectUserById } from '../../redux/module/usersSlice';
 
 interface IPostAuthorProps {
   userId: string;
@@ -7,7 +8,7 @@ interface IPostAuthorProps {
 
 const PostAuthor = (props: IPostAuthorProps) => {
   const author = useSelector((state: RootState) =>
-    state.users.find((user) => user.id === props.userId)
+    selectUserById(state, props.userId)
   );
 
   return <span>by {author ? author.name : 'Unknown author'}</span>;

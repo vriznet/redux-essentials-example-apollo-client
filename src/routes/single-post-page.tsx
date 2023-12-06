@@ -4,20 +4,21 @@ import PostAuthor from '../features/posts/PostAuthor';
 import ReactionButtons from '../features/posts/ReactionButtons';
 import TimeAgo from '../features/posts/TimeAgo';
 import { Post } from '../types/post';
-import { selectPosts } from '../redux/module/postsSlice';
+import { selectPostById } from '../redux/module/postsSlice';
 import { useSelector } from 'react-redux';
+import { RootState } from '../redux/module';
 
 const SinglePostPage = () => {
   const { postId } = useParams<{ postId: string }>();
-
-  const posts = useSelector(selectPosts);
 
   const useGetPostQuery: (postId: string) => {
     loading: boolean;
     data: Post | null;
     error: { message: string } | null;
   } = (postId) => {
-    const post = posts.find((post) => post.id === postId);
+    const post = useSelector((state: RootState) =>
+      selectPostById(state, postId)
+    );
 
     if (!post) {
       return {

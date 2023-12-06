@@ -3,11 +3,13 @@ import PostAuthor from './PostAuthor';
 import ReactionButtons from './ReactionButtons';
 import TimeAgo from './TimeAgo';
 import { Post } from '../../types/post';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Spinner from '../../components/Spinner';
 import classNames from 'classnames';
-import { useSelector } from 'react-redux';
-import { selectPosts } from '../../redux/module/postsSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPosts, selectPosts } from '../../redux/module/postsSlice';
+import { RootState } from '../../redux/module';
+import { AppDispatch } from '../../redux/store';
 
 interface IPostExcerptProps {
   post: Post;
@@ -15,7 +17,7 @@ interface IPostExcerptProps {
 
 const PostExcerpt = (props: IPostExcerptProps) => {
   return (
-    <article className="post-excerpt" key={props.post.id}>
+    <article className="post-excerpt" key={`post-${props.post.id}`}>
       <h3>{props.post.title}</h3>
       <div>
         <PostAuthor userId={props.post.userId} />
@@ -32,55 +34,38 @@ const PostExcerpt = (props: IPostExcerptProps) => {
 };
 
 const PostsList = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
   const posts = useSelector(selectPosts);
+  const postStatus = useSelector((state: RootState) => state.posts.status);
+  const postError = useSelector((state: RootState) => state.posts.error);
 
-  const useGetPostsQuery: () => {
-    loading: boolean;
-    data: {
-      posts: Post[];
-    } | null;
-    error: {
-      message: string;
-    } | null;
-  } = () => {
-    return {
-      loading: false,
-      data: {
-        posts,
-      },
-      error: null,
-    };
-  };
-  const {
-    loading: getPostsQueryLoading,
-    data: getPostsQueryData,
-    error: getPostsQueryError,
-  } = useGetPostsQuery();
-
-  if (getPostsQueryLoading || !getPostsQueryData) {
-    return <Spinner text="Loading..." />;
-  }
+  useEffect(() => {
+    if (postStatus === 'idle') {
+      dispatch(fetchPosts());
+    }
+  }, [postStatus, dispatch]);
 
   const sortedPosts = useMemo(() => {
-    const sortedPosts = [...getPostsQueryData.posts];
+    const sortedPosts = [...posts];
     sortedPosts.sort((a, b) => b.date.localeCompare(a.date));
     return sortedPosts;
-  }, [getPostsQueryData.posts]);
+  }, [posts]);
 
   let content: JSX.Element;
 
-  if (!getPostsQueryLoading && getPostsQueryData) {
+  if (postStatus === 'loading') {
+    return <Spinner text="Loading..." />;
+  } else if (postStatus === 'succeeded') {
     const renderedPosts = sortedPosts.map((post) => (
-      <PostExcerpt key={post.id} post={post} />
+      <PostExcerpt key={`post-${post.id}`} post={post} />
     ));
 
-    const containerClassname = classNames('posts-container', {
-      disabled: getPostsQueryLoading,
-    });
+    const containerClassname = classNames('posts-container');
 
     content = <div className={containerClassname}>{renderedPosts}</div>;
-  } else if (getPostsQueryError) {
-    content = <div>{getPostsQueryError.message}</div>;
+  } else if (postStatus === 'failed') {
+    content = <div>{postError}</div>;
   } else {
     content = <div>Something went wrong...</div>;
   }

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { postAdded } from '../../redux/module/postsSlice';
 import { selectUsers } from '../../redux/module/usersSlice';
+import { addNewPost } from '../../redux/module/postsSlice';
+import { AppDispatch } from '../../redux/store';
+import { unwrapResult } from '@reduxjs/toolkit';
 
 const AddPostForm = () => {
   const users = useSelector(selectUsers);
@@ -9,20 +11,14 @@ const AddPostForm = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState('');
+  const [addRequestStatus, setAddRequestStatus] = useState<'idle' | 'pending'>(
+    'idle'
+  );
 
-  const useAddNewPostMutation = () => {
-    const addNewPost = (params: {
-      title: string;
-      content: string;
-      userId: string;
-    }) => {
-      console.log('addNewPost: ', params);
-    };
-    return [addNewPost];
-  };
-  const [addNewPost] = useAddNewPostMutation();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const dispatch = useDispatch();
+  const canSave =
+    [title, content, userId].every(Boolean) && addRequestStatus === 'idle';
 
   const onTitleChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -33,29 +29,27 @@ const AddPostForm = () => {
   const onAuthorChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUserId(e.target.value);
   };
-  const onSavePostClicked = () => {
-    try {
-      if (canSave) {
-        dispatch(
-          postAdded({
-            title,
-            content,
-            userId,
-          })
+  const onSavePostClicked = async () => {
+    if (canSave) {
+      try {
+        setAddRequestStatus('pending');
+        const resultAction = await dispatch(
+          addNewPost({ title, content, userId })
         );
-        addNewPost({ title, content, userId });
+        unwrapResult(resultAction);
         setTitle('');
         setContent('');
+        setUserId('');
+      } catch (error) {
+        console.error('Failed to save the post: ', error);
+      } finally {
+        setAddRequestStatus('idle');
       }
-    } catch (error) {
-      console.error('Failed to save the post: ', error);
     }
   };
 
-  const canSave = Boolean(title) && Boolean(content) && Boolean(userId);
-
   const usersOptions = users.map((user) => (
-    <option key={user.id} value={user.id}>
+    <option key={`user-${user.id}`} value={user.id}>
       {user.name}
     </option>
   ));

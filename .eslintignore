@@ -3,3 +3,4 @@
 webpack.config.js
 /__generated__
 next.config.js
+/src/gql-codegen

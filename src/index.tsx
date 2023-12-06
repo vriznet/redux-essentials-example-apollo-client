@@ -12,6 +12,7 @@ import EditPostForm from './routes/edit-post-form';
 import UsersList from './routes/users-list';
 import UserPage from './routes/user-page';
 import NotificationsList from './routes/notifications-list';
+import { fetchUsers } from './redux/module/usersSlice';
 
 const router = createBrowserRouter([
   {
@@ -60,6 +61,9 @@ const router = createBrowserRouter([
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
+store.dispatch(fetchUsers());
+
 root.render(
   <React.StrictMode>
     <ReduxProvider store={store}>
