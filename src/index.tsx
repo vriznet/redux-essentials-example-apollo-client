@@ -13,6 +13,7 @@ import UsersList from './routes/users-list';
 import UserPage from './routes/user-page';
 import NotificationsList from './routes/notifications-list';
 import { fetchUsers } from './redux/module/usersSlice';
+import { fetchPosts } from './redux/module/postsSlice';
 
 const router = createBrowserRouter([
   {
@@ -63,6 +64,7 @@ const root = ReactDOM.createRoot(
 );
 
 store.dispatch(fetchUsers());
+store.dispatch(fetchPosts());
 
 root.render(
   <React.StrictMode>

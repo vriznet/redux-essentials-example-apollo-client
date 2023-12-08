@@ -3,13 +3,12 @@ import PostAuthor from './PostAuthor';
 import ReactionButtons from './ReactionButtons';
 import TimeAgo from './TimeAgo';
 import { Post } from '../../types/post';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import Spinner from '../../components/Spinner';
 import classNames from 'classnames';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchPosts, selectPosts } from '../../redux/module/postsSlice';
+import { useSelector } from 'react-redux';
+import { selectPosts } from '../../redux/module/postsSlice';
 import { RootState } from '../../redux/module';
-import { AppDispatch } from '../../redux/store';
 
 interface IPostExcerptProps {
   post: Post;
@@ -34,17 +33,9 @@ const PostExcerpt = (props: IPostExcerptProps) => {
 };
 
 const PostsList = () => {
-  const dispatch = useDispatch<AppDispatch>();
-
   const posts = useSelector(selectPosts);
   const postStatus = useSelector((state: RootState) => state.posts.status);
   const postError = useSelector((state: RootState) => state.posts.error);
-
-  useEffect(() => {
-    if (postStatus === 'idle') {
-      dispatch(fetchPosts());
-    }
-  }, [postStatus, dispatch]);
 
   const sortedPosts = useMemo(() => {
     const sortedPosts = [...posts];
