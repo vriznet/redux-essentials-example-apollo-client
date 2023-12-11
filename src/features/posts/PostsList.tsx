@@ -2,54 +2,50 @@ import { Link } from 'react-router-dom';
 import PostAuthor from './PostAuthor';
 import ReactionButtons from './ReactionButtons';
 import TimeAgo from './TimeAgo';
-import { Post } from '../../types/post';
-import { memo, useMemo } from 'react';
 import Spinner from '../../components/Spinner';
 import classNames from 'classnames';
 import { useSelector } from 'react-redux';
-import { selectPosts } from '../../redux/module/postsSlice';
+import { selectPostById, selectPostIds } from '../../redux/module/postsSlice';
 import { RootState } from '../../redux/module';
 
 interface IPostExcerptProps {
-  post: Post;
+  postId: string;
 }
 
-const PostExcerpt = memo((props: IPostExcerptProps) => {
+const PostExcerpt = (props: IPostExcerptProps) => {
+  const post = useSelector((state: RootState) =>
+    selectPostById(state, props.postId)
+  );
+  if (!post) return null;
   return (
-    <article className="post-excerpt" key={`post-${props.post.id}`}>
-      <h3>{props.post.title}</h3>
+    <article className="post-excerpt" key={`post-${post?.id}`}>
+      <h3>{post?.title}</h3>
       <div>
-        <PostAuthor userId={props.post.userId} />
-        <TimeAgo timestamp={props.post.date} />
+        <PostAuthor userId={post?.userId} />
+        <TimeAgo timestamp={post?.date} />
       </div>
-      <p className="post-content">{props.post.content.substring(0, 100)}</p>
+      <p className="post-content">{post?.content.substring(0, 100)}</p>
 
-      <ReactionButtons post={props.post} />
-      <Link to={`/post/${props.post.id}`} className="button muted-button">
+      <ReactionButtons post={post} />
+      <Link to={`/post/${post?.id}`} className="button muted-button">
         View Post
       </Link>
     </article>
   );
-});
+};
 
 const PostsList = () => {
-  const posts = useSelector(selectPosts);
+  const orderedPostIds = useSelector(selectPostIds);
   const postStatus = useSelector((state: RootState) => state.posts.status);
   const postError = useSelector((state: RootState) => state.posts.error);
-
-  const sortedPosts = useMemo(() => {
-    const sortedPosts = [...posts];
-    sortedPosts.sort((a, b) => b.date.localeCompare(a.date));
-    return sortedPosts;
-  }, [posts]);
 
   let content: JSX.Element;
 
   if (postStatus === 'loading') {
     return <Spinner text="Loading..." />;
   } else if (postStatus === 'succeeded') {
-    const renderedPosts = sortedPosts.map((post) => (
-      <PostExcerpt key={`post-${post.id}`} post={post} />
+    const renderedPosts = orderedPostIds.map((postId) => (
+      <PostExcerpt key={postId} postId={postId as string} />
     ));
 
     const containerClassname = classNames('posts-container');

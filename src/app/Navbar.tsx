@@ -12,7 +12,7 @@ import {
 } from '../gql-codegen/graphql';
 import { ADD_NEW_NOTIFICATION_MUTATION } from '../graphqls/notification.mutations';
 import randomstring from 'randomstring';
-import { RootState } from '../redux/module';
+import { selectUsers } from '../redux/module/usersSlice';
 
 const Navbar = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -21,9 +21,8 @@ const Navbar = () => {
   const numUnreadNotifications = notifications.filter(
     (notification) => !notification.read
   ).length;
-  const addNewNotificationUser = useSelector(
-    (state: RootState) => state.users.users[0]
-  );
+  const users = useSelector(selectUsers);
+  const addNewNotificationUser = users[0];
 
   const [addNewNotificationMutation] = useMutation<
     AddNewNotificationMutation,

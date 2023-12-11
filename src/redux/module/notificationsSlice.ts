@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  createAsyncThunk,
+  createEntityAdapter,
+  createSlice,
+} from '@reduxjs/toolkit';
 import { Notification } from '../../types/notification';
 import { RootState } from '.';
 import {
@@ -23,16 +27,18 @@ import { client } from '../../apollo';
 import dayjs from 'dayjs';
 
 type NotificationsState = {
-  notifications: Notification[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | undefined;
 };
 
-const initialState: NotificationsState = {
-  notifications: [],
+const notificationsAdapter = createEntityAdapter<Notification>({
+  sortComparer: (a, b) => b.date.localeCompare(a.date),
+});
+
+const initialState = notificationsAdapter.getInitialState<NotificationsState>({
   status: 'idle',
   error: undefined,
-};
+});
 
 export const fetchNotifications = createAsyncThunk<
   Notification[],
@@ -40,7 +46,7 @@ export const fetchNotifications = createAsyncThunk<
   { state: RootState }
 >('notifications/fetchNotifications', async (_, { getState }) => {
   dayjsTimezone();
-  const allNotifications = getState().notifications.notifications;
+  const allNotifications = selectNotifications(getState());
   const [latestNotification] = allNotifications;
   const latestNotificationDate = latestNotification
     ? dayjs(parseInt(latestNotification.date, 10))
@@ -120,8 +126,7 @@ export const notificationsSlice = createSlice({
     });
     builder.addCase(fetchNotifications.fulfilled, (state, action) => {
       state.status = 'succeeded';
-
-      state.notifications.unshift(...action.payload);
+      notificationsAdapter.upsertMany(state, action.payload);
     });
     builder.addCase(fetchNotifications.rejected, (state, action) => {
       state.status = 'failed';
@@ -133,7 +138,8 @@ export const notificationsSlice = createSlice({
     builder.addCase(markAllNotificationsAsRead.fulfilled, (state, action) => {
       if (action.payload === true) {
         state.status = 'succeeded';
-        state.notifications.forEach((notification) => {
+        Object.values(state.entities).forEach((notification) => {
+          if (!notification) return;
           notification.read = true;
           notification.isNew = false;
         });
@@ -152,15 +158,12 @@ export const notificationsSlice = createSlice({
         if (action.payload !== '') {
           state.status = 'succeeded';
           const userId = action.payload;
-          const indexesOfNotificationsToBeMarkedAsRead: number[] = [];
-          state.notifications.forEach((notification, index) => {
+          Object.values(state.entities).forEach((notification) => {
+            if (!notification) return;
             if (notification.userId === userId) {
-              indexesOfNotificationsToBeMarkedAsRead.push(index);
+              notification.read = true;
+              notification.isNew = false;
             }
-          });
-          indexesOfNotificationsToBeMarkedAsRead.forEach((index) => {
-            state.notifications[index].read = true;
-            state.notifications[index].isNew = false;
           });
         } else {
           state.status = 'failed';
@@ -175,7 +178,9 @@ export const notificationsSlice = createSlice({
   },
 });
 
-export const selectNotifications = (state: RootState) =>
-  state.notifications.notifications;
+export const { selectAll: selectNotifications } =
+  notificationsAdapter.getSelectors<RootState>(
+    (state: RootState) => state.notifications
+  );
 
 export default notificationsSlice.reducer;
