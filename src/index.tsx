@@ -14,6 +14,8 @@ import UserPage from './routes/user-page';
 import NotificationsList from './routes/notifications-list';
 import { fetchUsers } from './redux/module/usersSlice';
 import { fetchPosts } from './redux/module/postsSlice';
+import { ApolloProvider } from '@apollo/client';
+import { client } from './apollo';
 
 const router = createBrowserRouter([
   {
@@ -68,8 +70,10 @@ store.dispatch(fetchPosts());
 
 root.render(
   <React.StrictMode>
-    <ReduxProvider store={store}>
-      <RouterProvider router={router} />
-    </ReduxProvider>
+    <ApolloProvider client={client}>
+      <ReduxProvider store={store}>
+        <RouterProvider router={router} />
+      </ReduxProvider>
+    </ApolloProvider>
   </React.StrictMode>
 );

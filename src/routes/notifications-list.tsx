@@ -1,78 +1,56 @@
-import { formatDistanceToNow, parseISO } from 'date-fns';
-import Spinner from '../components/Spinner';
-import { notifications } from '../data/notifications';
-import { Notification } from '../types/notification';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectUsers } from '../redux/module/usersSlice';
+import {
+  markAllNotificationsAsRead,
+  selectNotifications,
+} from '../redux/module/notificationsSlice';
+import { useEffect } from 'react';
+import classnames from 'classnames';
+import { AppDispatch } from '../redux/store';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { dayjsTimezone } from '../utils';
 
 const NotificationsList = () => {
+  dayjsTimezone();
+  dayjs.extend(relativeTime);
+
+  const dispatch = useDispatch<AppDispatch>();
+
+  const notifications = useSelector(selectNotifications);
   const users = useSelector(selectUsers);
 
-  const useGetNotificationsQuery: (userId: string) => {
-    loading: boolean;
-    data: {
-      notifications: Notification[];
-    } | null;
-    error: {
-      message: string;
-    } | null;
-  } = (userId) => {
-    return {
-      loading: false,
-      data: {
-        notifications: notifications.filter(
-          (notification) => notification.userId === userId
-        ),
-      },
-      error: null,
+  const renderedNotifications = notifications.map((notification) => {
+    const date = dayjs(parseInt(notification.date, 10))
+      .tz('Asia/Seoul')
+      .toDate();
+    const timeAgo = dayjs(date).fromNow();
+    const user = users.find((user) => user.id === notification.userId) || {
+      name: 'Unknown User',
     };
-  };
 
-  const {
-    loading: getNotificationsQueryLoading,
-    data: getNotificationsQueryData,
-    error: getNotificationsQueryError,
-  } = useGetNotificationsQuery('1');
+    const notificationClassname = classnames('notification', {
+      new: notification.isNew,
+    });
 
-  if (getNotificationsQueryLoading || !getNotificationsQueryData) {
-    return <Spinner text="Loading..." />;
-  }
-
-  if (getNotificationsQueryError) {
     return (
-      <div id="error-page">
-        <h1>Oops!</h1>
-        <p>Sorry, an error has occured.</p>
-        <p>
-          <i>Error: {getNotificationsQueryError.message}</i>
-        </p>
+      <div key={notification.id} className={notificationClassname}>
+        <div>
+          <b>{user.name}</b> {notification.message}
+        </div>
+        <div title={notification.date}>
+          <i>{timeAgo}</i>
+        </div>
       </div>
     );
-  }
+  });
 
-  const renderedNotifications = getNotificationsQueryData.notifications.map(
-    (notification) => {
-      const date = parseISO(notification.date);
-      const timeAgo = formatDistanceToNow(date);
-      const user = users.find((user) => user.id === notification.userId) || {
-        name: 'Unknown User',
-      };
-
-      return (
-        <div key={notification.id} className="notification">
-          <div>
-            <b>{user.name}</b> {notification.message}
-          </div>
-          <div title={notification.date}>
-            <i>{timeAgo} ago</i>
-          </div>
-        </div>
-      );
-    }
-  );
+  useEffect(() => {
+    dispatch(markAllNotificationsAsRead());
+  }, []);
 
   return (
-    <section>
+    <section className="notificationsList">
       <h2>Notifications</h2>
       {renderedNotifications}
     </section>

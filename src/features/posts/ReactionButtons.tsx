@@ -1,43 +1,40 @@
 import { useDispatch } from 'react-redux';
 import { reactionEmoji, reactionEmojiNameList } from '../../data/emoji';
 import { Post } from '../../types/post';
-import { reactionAdded } from '../../redux/module/postsSlice';
+import { addPostReaction } from '../../redux/module/postsSlice';
+import { AppDispatch } from '../../redux/store';
 
 interface IReactionButtonsProps {
-  post: Post;
+  post: Post | undefined;
 }
 
 const ReactionButtons = (props: IReactionButtonsProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const useAddReactionMutation = () => {
-    const addReaction = (params: { postId: string; reaction: string }) => {
-      console.log('addReaction: ', params);
-    };
+  let reactionButtons;
+  if (props.post === undefined) {
+    reactionButtons = null;
+  } else {
+    const postId = props.post.id;
+    const postReactions = props.post.reactions;
+    reactionButtons = reactionEmojiNameList.map((reactionName) => {
+      const handleAddReaction = () => {
+        dispatch(addPostReaction({ postId, reactionName }));
+      };
 
-    return [addReaction];
-  };
-
-  const [addReaction] = useAddReactionMutation();
-
-  const reactionButtons = reactionEmojiNameList.map((reactionName) => {
-    const handleAddReaction = () => {
-      dispatch(reactionAdded({ postId: props.post.id, reactionName }));
-      addReaction({ postId: props.post.id, reaction: reactionName });
-    };
-
-    return (
-      <button
-        key={reactionName}
-        type="button"
-        className="muted-button reaction-button"
-        onClick={handleAddReaction}
-        style={{ cursor: 'pointer' }}
-      >
-        {reactionEmoji[reactionName]} {props.post.reactions[reactionName]}
-      </button>
-    );
-  });
+      return (
+        <button
+          key={reactionName}
+          type="button"
+          className="muted-button reaction-button"
+          onClick={handleAddReaction}
+          style={{ cursor: 'pointer' }}
+        >
+          {reactionEmoji[reactionName]} {postReactions[reactionName]}
+        </button>
+      );
+    });
+  }
 
   return <div>{reactionButtons}</div>;
 };

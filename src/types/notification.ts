@@ -3,4 +3,6 @@ export type Notification = {
   date: string;
   message: string;
   userId: string;
+  read: boolean;
+  isNew: boolean;
 };

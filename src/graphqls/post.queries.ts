@@ -9,6 +9,7 @@ export const POSTS_QUERY = graphql(`
       userId
       date
       reactions {
+        id
         thumbsUp
         hooray
         heart

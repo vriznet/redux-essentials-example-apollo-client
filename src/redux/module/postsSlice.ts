@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { Post } from '../../types/post';
+import { Post, PostReactions } from '../../types/post';
 import { RootState } from '.';
-import { ReactionName } from '../../types/common';
 import { POSTS_QUERY } from '../../graphqls/post.queries';
 import {
   apolloQueryWithDelay,
@@ -11,11 +10,19 @@ import {
 import {
   AddNewPostMutation,
   AddNewPostMutationVariables,
+  AddPostReactionMutation,
+  AddPostReactionMutationVariables,
   PostsQuery,
   PostsQueryVariables,
+  UpdatePostMutation,
+  UpdatePostMutationVariables,
 } from '../../gql-codegen/graphql';
 import { client } from '../../apollo';
-import { ADD_NEW_POST_MUTATION } from '../../graphqls/post.mutations';
+import {
+  ADD_NEW_POST_MUTATION,
+  ADD_POST_REACTION_MUTATION,
+  UPDATE_POST_MUTATION,
+} from '../../graphqls/post.mutations';
 
 type PostsState = {
   posts: Post[];
@@ -59,32 +66,56 @@ export const addNewPost = createAsyncThunk(
   }
 );
 
+export const updatePost = createAsyncThunk(
+  'posts/updatePost',
+  async (updatePost: Omit<Post, 'date' | 'reactions' | 'userId'>) => {
+    const response = await client.mutate<
+      UpdatePostMutation,
+      UpdatePostMutationVariables
+    >({
+      mutation: UPDATE_POST_MUTATION,
+      variables: updatePost,
+    });
+    if (!response || !response.data) {
+      console.error('Something went wrong.');
+      return [];
+    }
+    return deepRemoveTypename(response.data.updatePost);
+  }
+);
+
+export const addPostReaction = createAsyncThunk(
+  'posts/addPostReaction',
+  async (reaction: { postId: string; reactionName: string }) => {
+    const response = await client.mutate<
+      AddPostReactionMutation,
+      AddPostReactionMutationVariables
+    >({
+      mutation: ADD_POST_REACTION_MUTATION,
+      variables: {
+        postId: reaction.postId,
+        reactionName: reaction.reactionName,
+      },
+    });
+    if (
+      !response ||
+      !response.data ||
+      response.data.addPostReaction.ok === false
+    ) {
+      console.error('Something went wrong.');
+      return null;
+    }
+    return {
+      postId: reaction.postId,
+      reactionName: reaction.reactionName,
+    };
+  }
+);
+
 const postsSlice = createSlice({
   name: 'posts',
   initialState,
-  reducers: {
-    postUpdated(state, action: { payload: Partial<Post> }) {
-      const { id, title, content, userId, date, reactions } = action.payload;
-      const existingPost = state.posts.find((post) => post.id === id);
-      if (existingPost) {
-        existingPost.title = title ?? existingPost.title;
-        existingPost.content = content ?? existingPost.content;
-        existingPost.userId = userId ?? existingPost.userId;
-        existingPost.date = date ?? existingPost.date;
-        existingPost.reactions = reactions ?? existingPost.reactions;
-      }
-    },
-    reactionAdded(
-      state,
-      action: { payload: { postId: string; reactionName: ReactionName } }
-    ) {
-      const { postId, reactionName } = action.payload;
-      const existingPost = state.posts.find((post) => post.id === postId);
-      if (existingPost) {
-        existingPost.reactions[reactionName]++;
-      }
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchPosts.pending, (state) => {
@@ -100,6 +131,25 @@ const postsSlice = createSlice({
       })
       .addCase(addNewPost.fulfilled, (state, action) => {
         state.posts.push(action.payload);
+      })
+      .addCase(updatePost.fulfilled, (state, action) => {
+        const { id, title, content, userId, date, reactions } = action.payload;
+        const existingPost = state.posts.find((post) => post.id === id);
+        if (existingPost) {
+          existingPost.title = title ?? existingPost.title;
+          existingPost.content = content ?? existingPost.content;
+          existingPost.userId = userId ?? existingPost.userId;
+          existingPost.date = date ?? existingPost.date;
+          existingPost.reactions = reactions ?? existingPost.reactions;
+        }
+      })
+      .addCase(addPostReaction.fulfilled, (state, action) => {
+        if (!action.payload) return;
+        const { postId, reactionName } = action.payload;
+        const existingPost = state.posts.find((post) => post.id === postId);
+        if (existingPost) {
+          existingPost.reactions[reactionName as keyof PostReactions]++;
+        }
       });
   },
 });
@@ -107,7 +157,5 @@ const postsSlice = createSlice({
 export const selectPosts = (state: RootState) => state.posts.posts;
 export const selectPostById = (state: RootState, postId: string) =>
   state.posts.posts.find((post) => post.id === postId);
-
-export const { postUpdated, reactionAdded } = postsSlice.actions;
 
 export default postsSlice.reducer;

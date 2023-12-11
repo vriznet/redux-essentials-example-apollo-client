@@ -1,15 +1,53 @@
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import {
+  fetchNotifications,
+  selectNotifications,
+} from '../redux/module/notificationsSlice';
+import { AppDispatch } from '../redux/store';
+import { useMutation } from '@apollo/client';
+import {
+  AddNewNotificationMutation,
+  AddNewNotificationMutationVariables,
+} from '../gql-codegen/graphql';
+import { ADD_NEW_NOTIFICATION_MUTATION } from '../graphqls/notification.mutations';
+import randomstring from 'randomstring';
+import { RootState } from '../redux/module';
 
 const Navbar = () => {
-  const tempNumUnreadNotifications = 1;
+  const dispatch = useDispatch<AppDispatch>();
 
-  const fetchNewNotifications = () => {};
+  const notifications = useSelector(selectNotifications);
+  const numUnreadNotifications = notifications.filter(
+    (notification) => !notification.read
+  ).length;
+  const addNewNotificationUser = useSelector(
+    (state: RootState) => state.users.users[0]
+  );
+
+  const [addNewNotificationMutation] = useMutation<
+    AddNewNotificationMutation,
+    AddNewNotificationMutationVariables
+  >(ADD_NEW_NOTIFICATION_MUTATION, {
+    variables: {
+      message: randomstring.generate(10),
+      userId: addNewNotificationUser?.id,
+    },
+  });
+
+  const fetchNewNotifications = () => {
+    dispatch(fetchNotifications());
+  };
+
+  const addNewNotification = () => {
+    addNewNotificationMutation();
+  };
 
   let unreadNotificationsBadge;
 
-  if (tempNumUnreadNotifications > 0) {
+  if (numUnreadNotifications > 0) {
     unreadNotificationsBadge = (
-      <span className="badge">{tempNumUnreadNotifications}</span>
+      <span className="badge">{numUnreadNotifications}</span>
     );
   }
 
@@ -25,6 +63,9 @@ const Navbar = () => {
               Notifications {unreadNotificationsBadge}
             </Link>
           </div>
+          <button className="button" onClick={addNewNotification}>
+            Add Test Notification
+          </button>
           <button className="button" onClick={fetchNewNotifications}>
             Refresh Notifications
           </button>

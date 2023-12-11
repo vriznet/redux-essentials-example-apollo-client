@@ -1,48 +1,13 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import Spinner from '../components/Spinner';
-import { Post } from '../types/post';
 import { useDispatch, useSelector } from 'react-redux';
-import { postUpdated, selectPosts } from '../redux/module/postsSlice';
+import { selectPostById, updatePost } from '../redux/module/postsSlice';
+import { RootState } from '../redux/module';
+import { AppDispatch } from '../redux/store';
 
 const EditPostForm = () => {
   const { postId } = useParams<{ postId: string }>();
-  const posts = useSelector(selectPosts);
-
-  const useGetPostQuery: (postId: string) => {
-    loading: boolean;
-    data: Post | null;
-    error: { message: string } | null;
-  } = (postId) => {
-    const post = posts.find((post) => post.id === postId);
-
-    if (!post) {
-      return {
-        loading: false,
-        data: null,
-        error: {
-          message: 'Post not found',
-        },
-      };
-    }
-    return {
-      loading: false,
-      data: post,
-      error: null,
-    };
-  };
-
-  const useUpdatePostMutation = () => {
-    const updatePost = (params: {
-      postId: string;
-      title: string;
-      content: string;
-      userId: string;
-    }) => {
-      console.log('updatePost: ', params);
-    };
-    return [updatePost];
-  };
 
   if (!postId) {
     return (
@@ -55,20 +20,14 @@ const EditPostForm = () => {
       </div>
     );
   }
+  const postsStatus = useSelector((state: RootState) => state.posts.status);
+  const post = useSelector((state: RootState) => selectPostById(state, postId));
 
-  const {
-    loading: getPostQueryLoading,
-    data: getPostQueryData,
-    error: getPostQueryError,
-  } = useGetPostQuery(postId);
-
-  const [updatePost] = useUpdatePostMutation();
-
-  const [title, setTitle] = useState(getPostQueryData?.title || '');
-  const [content, setContent] = useState(getPostQueryData?.content || '');
+  const [title, setTitle] = useState(post?.title || '');
+  const [content, setContent] = useState(post?.content || '');
 
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const onTitleChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -79,9 +38,8 @@ const EditPostForm = () => {
 
   const onSavePostClicked = () => {
     try {
-      if (title && content && getPostQueryData) {
-        dispatch(postUpdated({ id: postId, title, content }));
-        updatePost({ postId, title, content, userId: getPostQueryData.userId });
+      if (title && content) {
+        dispatch(updatePost({ id: postId, title, content }));
         navigate(`/post/${postId}`);
       } else {
         console.error('Title and content are required.');
@@ -91,17 +49,8 @@ const EditPostForm = () => {
     }
   };
 
-  if (getPostQueryLoading || !getPostQueryData) {
+  if (postsStatus === 'loading') {
     return <Spinner text="Loading..." />;
-  }
-
-  if (getPostQueryError) {
-    return (
-      <section>
-        <h2>Error</h2>
-        <p>{getPostQueryError.message}</p>
-      </section>
-    );
   }
 
   return (
@@ -121,7 +70,6 @@ const EditPostForm = () => {
             placeholder="What's on your mind?"
             value={title}
             onChange={onTitleChanged}
-            disabled={getPostQueryLoading}
           />
         </div>
         <div style={{ marginBottom: '8px' }}>
@@ -133,15 +81,10 @@ const EditPostForm = () => {
             name="postContent"
             value={content}
             onChange={onContentChanged}
-            disabled={getPostQueryLoading}
           />
         </div>
       </form>
-      <button
-        type="button"
-        onClick={onSavePostClicked}
-        disabled={getPostQueryLoading}
-      >
+      <button type="button" onClick={onSavePostClicked}>
         Save Post
       </button>
     </section>
