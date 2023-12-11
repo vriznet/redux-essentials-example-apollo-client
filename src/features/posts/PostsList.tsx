@@ -3,7 +3,7 @@ import PostAuthor from './PostAuthor';
 import ReactionButtons from './ReactionButtons';
 import TimeAgo from './TimeAgo';
 import { Post } from '../../types/post';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import Spinner from '../../components/Spinner';
 import classNames from 'classnames';
 import { useSelector } from 'react-redux';
@@ -14,7 +14,7 @@ interface IPostExcerptProps {
   post: Post;
 }
 
-const PostExcerpt = (props: IPostExcerptProps) => {
+const PostExcerpt = memo((props: IPostExcerptProps) => {
   return (
     <article className="post-excerpt" key={`post-${props.post.id}`}>
       <h3>{props.post.title}</h3>
@@ -30,7 +30,7 @@ const PostExcerpt = (props: IPostExcerptProps) => {
       </Link>
     </article>
   );
-};
+});
 
 const PostsList = () => {
   const posts = useSelector(selectPosts);

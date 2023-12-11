@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from '@reduxjs/toolkit';
 import { Post, PostReactions } from '../../types/post';
 import { RootState } from '.';
 import { POSTS_QUERY } from '../../graphqls/post.queries';
@@ -157,5 +161,9 @@ const postsSlice = createSlice({
 export const selectPosts = (state: RootState) => state.posts.posts;
 export const selectPostById = (state: RootState, postId: string) =>
   state.posts.posts.find((post) => post.id === postId);
+export const selectPostsByUser = createSelector(
+  [selectPosts, (state: RootState, userId: string) => userId],
+  (posts, userId) => posts.filter((post) => post.userId === userId)
+);
 
 export default postsSlice.reducer;
